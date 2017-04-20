@@ -8,7 +8,9 @@
     // 在gob包里注册自定义结构体
 	gob.Register(TokenData{})
 
+	//生成签名算法的密钥字符串
 	var key string = "secret"
+	
 	//实例化一个claims
 	var claims token.Claims
 	//claims的数据是一个自定义结构体
@@ -52,7 +54,7 @@
 	}
 
 
-快速校验token字符串是否有效
+**快速校验token字符串是否有效**
 
 	err := token.FastValid(tokenStr, key, true)
 	if err != nil {
