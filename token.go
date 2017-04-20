@@ -150,7 +150,7 @@ func (this *Token) GetExp() int64 {
 	return this.exp
 }
 
-func (this *Token) GetCustomParams() interface{} {
+func (this *Token) GetData() interface{} {
 	return this.data
 }
 
