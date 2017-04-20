@@ -12,7 +12,7 @@ import (
 
 type Token struct {
 	str    string
-	Claims Claims
+	Claims *Claims
 }
 type Claims struct {
 	Exp    int64
@@ -37,6 +37,7 @@ func New(claims *Claims, key string) (*Token, error) {
 	claimsBase64 := base64.URLEncoding.EncodeToString(claimsJSON)
 
 	var wt Token
+	wt.Claims = claims
 	wt.str = claimsBase64 + "." + sign
 	return &wt, nil
 }
@@ -72,7 +73,8 @@ func Parse(tokenStr string, key string) (*Token, error) {
 	}
 
 	var wt Token
-	wt.Claims = claims
+	wt.Claims = &claims
+	wt.str = tokenStr
 	return &wt, nil
 }
 
