@@ -40,8 +40,9 @@ func operation(claims *Claims, key string) (sign string, tokenStr string, err er
 		return
 	}
 
-	//将claims的base64字符串与签名拼接出token字符串
+	//用base64将claims进行编码
 	claimsBase64 := base64.URLEncoding.EncodeToString(claimsBytes)
-	tokenStr = claimsBase64 + "." + sign
+	//去掉base64结尾的==符号再拼接sign成为token字符串
+	tokenStr = claimsBase64[:len(claimsBase64)-2] + "." + sign
 	return
 }

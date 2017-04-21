@@ -23,7 +23,7 @@ func Parse(tokenStr string, claims Claims, key string) (*Token, error) {
 	}
 
 	//将数组的claims部份用base64解码
-	claimsBytes, err := base64.URLEncoding.DecodeString(arr[0])
+	claimsBytes, err := base64.URLEncoding.DecodeString(arr[0] + "==")
 	if err != nil {
 		return nil, err
 	}
