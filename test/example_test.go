@@ -1,8 +1,6 @@
-/*
 package test
 
 import (
-	"encoding/gob"
 	"testing"
 	"time"
 
@@ -11,79 +9,72 @@ import (
 
 type testClaims struct {
 	UserID int64
+	token.ClaimsAttr
 }
 
 var (
-	key          string       = "secret" //签名密钥
-	claims       testClaims              //用户数据
-	claims       token.Claims            //token属性
-	testTokenStr string                  //测试用的token字符串
+	key          string = "secret" //签名密钥
+	claims       testClaims
+	testTokenStr string //测试用的token字符串
 )
 
 func init() {
-	//注册用户数据结构体
-	gob.Register(testClaims{})
-
-	//用户数据赋值
-	cl.UserID = 123
-
-	//token属性赋值
-	claims.Exp = time.Now().Add(12 * time.Hour).Unix() //传入生命周期
-	claims.Data = cl                                   //传入用户数据
+	claims.UserID = 123
+	claims.ClaimsAT = time.Now().Add(5 * time.Second).Unix()   //激活时间
+	claims.ClaimsExp = time.Now().Add(10 * time.Second).Unix() //到期时间
 }
 
 //测试生成token字符串
 func TestNewString(t *testing.T) {
-	tokenStr, err := token.NewString(&claims, key)
+	tokenStr, err := token.NewString(claims, key)
 	if err != nil {
 		t.Error(err.Error())
 		return
 	}
-
 	t.Log(tokenStr)
 }
 
 //测试生成token对象
 func TestNew(t *testing.T) {
-	token, err := token.New(&claims, key)
+	tk, err := token.New(claims, key)
 	if err != nil {
 		t.Error(err.Error())
 		return
 	}
-
-	testTokenStr = token.GetString()
-
-	t.Log(token.GetString())
+	testTokenStr = tk.GetString()
+	t.Log(testTokenStr)
 }
 
 //测试解析token字符串成token对象
 func TestParse(t *testing.T) {
 	//解析token字符串，得到token对象
-	token, err := token.Parse(testTokenStr, key)
+	tk, err := token.Parse(testTokenStr, &testClaims{}, key)
 	if err != nil {
 		t.Error(err.Error())
 		return
 	}
+	//获得claims数据
+	claims := tk.Claims.(*testClaims)
+	t.Log(claims.UserID)
 
-	//校验token时效
-	if token.ValidExp() == false {
-		t.Log("token已超时")
-		return
-	}
-	//获得用户数据
-	TokenData := token.GetData().(testClaims)
-
-	t.Log(TokenData.UserID)
-}
-
-func TestFastValid(t *testing.T) {
-	//解析token字符串，得到token对象
-	err := token.FastValid(testTokenStr, key, true)
-	if err != nil {
-		t.Error(err.Error())
-		return
+	//检查是否激活
+	if claims.Activated() == true {
+		t.Log("token已激活")
 	} else {
-		t.Log("token字符串有效")
+		t.Log("token还未激活时间")
+	}
+
+	//检查是否到期
+	if claims.Expired() == true {
+		t.Log("token已到期")
+	} else {
+		t.Log("token未到期")
+	}
+
+	//检查是否有效，会同时检查激活时间和到期时间
+	if claims.Valid() == true {
+		t.Log("token有效")
+	} else {
+		t.Log("token无效")
 	}
 }
-*/
