@@ -6,6 +6,7 @@ import "time"
 type Claims interface {
 	Activated() bool //检查是否激活
 	Expired() bool   //检查是否到期
+	Valid() bool     //检查所有时间决定token是否有效
 }
 
 // claims的属性
@@ -24,8 +25,17 @@ func (this ClaimsAttr) Activated() bool {
 
 //检查是否到期
 func (this ClaimsAttr) Expired() bool {
-	if this.ClaimsExp > 0 && this.ClaimsExp < time.Now().Unix() {
+	if this.ClaimsExp < time.Now().Unix() {
 		return true
 	}
 	return true
+}
+
+//检查所有时间决定token是否有效
+func (this ClaimsAttr) Valid() bool {
+	now := time.Now().Unix()
+	if this.ClaimsAT > now && this.ClaimsExp < now {
+		return true
+	}
+	return false
 }
