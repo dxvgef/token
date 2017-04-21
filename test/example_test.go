@@ -8,20 +8,20 @@ import (
 	"git.oschina.net/dxvgef/token"
 )
 
-type Data struct {
+type dataTest struct {
 	UserID int64
 }
 
 var (
 	key          string       = "secret" //签名密钥
-	data         Data                    //用户数据
+	data         dataTest                //用户数据
 	claims       token.Claims            //token属性
 	testTokenStr string                  //测试用的token字符串
 )
 
 func init() {
 	//注册用户数据结构体
-	gob.Register(Data{})
+	gob.Register(dataTest{})
 
 	//用户数据赋值
 	data.UserID = 123
@@ -32,7 +32,7 @@ func init() {
 }
 
 //测试生成token字符串
-func Test_NewString(t *testing.T) {
+func TestNewString(t *testing.T) {
 	tokenStr, err := token.NewString(&claims, key)
 	if err != nil {
 		t.Error(err.Error())
@@ -43,7 +43,7 @@ func Test_NewString(t *testing.T) {
 }
 
 //测试生成token对象
-func Test_New(t *testing.T) {
+func TestNew(t *testing.T) {
 	token, err := token.New(&claims, key)
 	if err != nil {
 		t.Error(err.Error())
@@ -56,7 +56,7 @@ func Test_New(t *testing.T) {
 }
 
 //测试解析token字符串成token对象
-func Test_Parse(t *testing.T) {
+func TestParse(t *testing.T) {
 	//解析token字符串，得到token对象
 	token, err := token.Parse(testTokenStr, key)
 	if err != nil {
@@ -70,12 +70,12 @@ func Test_Parse(t *testing.T) {
 		return
 	}
 	//获得用户数据
-	TokenData := token.GetData().(Data)
+	TokenData := token.GetData().(dataTest)
 
 	t.Log(TokenData.UserID)
 }
 
-func Test_FastValid(t *testing.T) {
+func TestFastValid(t *testing.T) {
 	//解析token字符串，得到token对象
 	err := token.FastValid(testTokenStr, key, true)
 	if err != nil {
