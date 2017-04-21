@@ -8,22 +8,40 @@ import (
 //传入claims和key，返回一个实例化的token指针
 func New(claims Claims, key string) (*Token, error) {
 	var token Token
-	//将claims序列化成json
-	claimsBytes, err := json.Marshal(claims)
+	sign, tokenStr, err := operation(&claims, key)
 	if err != nil {
 		return nil, err
 	}
-	//计算claims的签名
-	sign, err := sha256Encode(claimsBytes, key)
+	token.str = tokenStr
+	token.Claims = claims
+	token.sign = sign
+	return &token, nil
+}
+
+//传入claims和key，返回token字符串
+func NewString(claims Claims, key string) (tokenStr string, err error) {
+	_, tokenStr, err = operation(&claims, key)
 	if err != nil {
-		return nil, err
+		return
+	}
+	return
+}
+
+//对claims进行编码，并计算出签名和token字符串
+func operation(claims *Claims, key string) (sign string, tokenStr string, err error) {
+	//将claims序列化成json
+	claimsBytes, err := json.Marshal(claims)
+	if err != nil {
+		return
+	}
+	//计算claims的签名
+	sign, err = sha256Encode(claimsBytes, key)
+	if err != nil {
+		return
 	}
 
 	//将claims的base64字符串与签名拼接出token字符串
 	claimsBase64 := base64.URLEncoding.EncodeToString(claimsBytes)
-	token.str = claimsBase64 + "." + sign
-
-	token.Claims = claims
-	token.sign = sign
-	return &token, nil
+	tokenStr = claimsBase64 + "." + sign
+	return
 }
