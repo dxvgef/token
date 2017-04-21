@@ -17,7 +17,7 @@ type ClaimsAttr struct {
 
 //检查是否激活
 func (this ClaimsAttr) Activated() bool {
-	if this.ClaimsAT > time.Now().Unix() {
+	if this.ClaimsAT < time.Now().Unix() {
 		return true
 	}
 	return false
@@ -25,7 +25,7 @@ func (this ClaimsAttr) Activated() bool {
 
 //检查是否到期
 func (this ClaimsAttr) Expired() bool {
-	if this.ClaimsExp > time.Now().Unix() {
+	if this.ClaimsExp < time.Now().Unix() {
 		return true
 	}
 	return false
