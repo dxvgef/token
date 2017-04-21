@@ -20,15 +20,15 @@ func (this ClaimsAttr) Activated() bool {
 	if this.ClaimsAT > time.Now().Unix() {
 		return true
 	}
-	return true
+	return false
 }
 
 //检查是否到期
 func (this ClaimsAttr) Expired() bool {
-	if this.ClaimsExp < time.Now().Unix() {
+	if this.ClaimsExp > time.Now().Unix() {
 		return true
 	}
-	return true
+	return false
 }
 
 //检查所有时间决定token是否有效
