@@ -17,7 +17,7 @@ type ClaimsAttr struct {
 
 //检查是否激活
 func (this ClaimsAttr) Activated() bool {
-	if this.ClaimsAT == 0 || this.ClaimsAT > time.Now().Unix() {
+	if this.ClaimsAT < time.Now().Unix() {
 		return true
 	}
 	return false
@@ -34,7 +34,7 @@ func (this ClaimsAttr) Expired() bool {
 //检查所有时间决定token是否有效
 func (this ClaimsAttr) Valid() bool {
 	now := time.Now().Unix()
-	if this.ClaimsAT > now && this.ClaimsExp < now {
+	if this.ClaimsAT < now && this.ClaimsExp < now || this.ClaimsExp == 0 {
 		return true
 	}
 	return false
