@@ -41,8 +41,8 @@ func operation(claims *Claims, key string) (sign string, tokenStr string, err er
 	}
 
 	//用base64将claims进行编码
-	claimsBase64 := base64.URLEncoding.EncodeToString(claimsBytes)
+	claimsBase64 := base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(claimsBytes)
 	//去掉base64结尾的==符号再拼接sign成为token字符串
-	tokenStr = claimsBase64[:len(claimsBase64)-2] + "." + sign
+	tokenStr = claimsBase64 + "." + sign
 	return
 }
