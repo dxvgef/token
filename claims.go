@@ -34,7 +34,7 @@ func (this ClaimsAttr) Expired() bool {
 //检查所有时间决定token是否有效
 func (this ClaimsAttr) Valid() bool {
 	now := time.Now().Unix()
-	if this.ClaimsAT < now && this.ClaimsExp < now || this.ClaimsExp == 0 {
+	if this.ClaimsAT < now && this.ClaimsExp > now || this.ClaimsExp == 0 {
 		return true
 	}
 	return false
