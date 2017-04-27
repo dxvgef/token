@@ -21,9 +21,6 @@ func New(claims Claims, key string) (*Token, error) {
 //传入claims和key，返回token字符串
 func NewString(claims Claims, key string) (tokenStr string, err error) {
 	_, tokenStr, err = operation(&claims, key)
-	if err != nil {
-		return
-	}
 	return
 }
 
