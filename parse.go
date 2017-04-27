@@ -47,5 +47,6 @@ func Parse(tokenStr string, claims Claims, key string) (*Token, error) {
 
 	token.Claims = claims
 	token.sign = sign
+	token.str = tokenStr
 	return &token, nil
 }

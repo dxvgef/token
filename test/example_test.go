@@ -36,7 +36,7 @@ func TestNewString(t *testing.T) {
 
 //测试生成token对象
 func TestNew(t *testing.T) {
-	tk, err := token.New(claims, key)
+	tk, err := token.New(&claims, key)
 	if err != nil {
 		t.Error(err.Error())
 		return
