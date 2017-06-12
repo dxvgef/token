@@ -39,3 +39,13 @@ func (this ClaimsAttr) Valid() bool {
 	}
 	return false
 }
+
+//获得生效时间
+func (this ClaimsAttr) GetAT() int64 {
+	return this.ClaimsAT
+}
+
+//获得失效时间
+func (this ClaimsAttr) GetExp() int64 {
+	return this.ClaimsExp
+}
