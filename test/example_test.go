@@ -1,13 +1,15 @@
-package token
+package test
 
 import (
 	"testing"
 	"time"
-	)
+
+	"github.com/dxvgef/token"
+)
 
 type testClaims struct {
 	UserID int64
-	ClaimsAttr
+	token.ClaimsAttr
 }
 
 var (
@@ -24,7 +26,7 @@ func init() {
 
 //测试生成token字符串
 func TestNewString(t *testing.T) {
-	tokenStr, err := NewString(claims, key)
+	tokenStr, err := token.NewString(claims, key)
 	if err != nil {
 		t.Error(err.Error())
 		return
@@ -34,7 +36,7 @@ func TestNewString(t *testing.T) {
 
 //测试生成token对象
 func TestNew(t *testing.T) {
-	tk, err := New(&claims, key)
+	tk, err := token.New(&claims, key)
 	if err != nil {
 		t.Error(err.Error())
 		return
@@ -46,7 +48,7 @@ func TestNew(t *testing.T) {
 //测试解析token字符串成token对象
 func TestParse(t *testing.T) {
 	//解析token字符串，得到token对象
-	tk, err := Parse(testTokenStr, &testClaims{}, key)
+	tk, err := token.Parse(testTokenStr, &testClaims{}, key)
 	if err != nil {
 		t.Error(err.Error())
 		return
