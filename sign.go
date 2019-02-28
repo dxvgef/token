@@ -13,9 +13,9 @@ func sha256Encode(claimsBytes []byte, key string) (sign string, err error) {
 	if err != nil {
 		return
 	}
-	//加密时带上key
+	// 加密时带上key
 	hash.Write(strToByte(key))
-	//计算出字符串格式的签名
+	// 计算出字符串格式的签名
 	sign = hex.EncodeToString(hash.Sum(nil))
 	claimsBytes = nil
 	return

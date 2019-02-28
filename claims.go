@@ -2,7 +2,7 @@ package token
 
 import "time"
 
-//claims的方法
+// claims的方法
 type Claims interface {
 	Activated() bool //检查是否激活
 	Expired() bool   //检查是否到期
@@ -17,7 +17,7 @@ type ClaimsAttr struct {
 	ClaimsExp int64 `json:"claims_exp,omitempty"` //到期时间
 }
 
-//检查是否生效
+// 检查是否生效
 func (this ClaimsAttr) Activated() bool {
 	if this.ClaimsAT < time.Now().Unix() {
 		return true
@@ -25,7 +25,7 @@ func (this ClaimsAttr) Activated() bool {
 	return false
 }
 
-//检查是否到期
+// 检查是否到期
 func (this ClaimsAttr) Expired() bool {
 	if this.ClaimsExp == 0 || this.ClaimsExp > time.Now().Unix() {
 		return false
@@ -33,7 +33,7 @@ func (this ClaimsAttr) Expired() bool {
 	return true
 }
 
-//检查所有时间决定token是否有效
+// 检查所有时间决定token是否有效
 func (this ClaimsAttr) Valid() bool {
 	now := time.Now().Unix()
 	if this.ClaimsAT < now && this.ClaimsExp > now || this.ClaimsExp == 0 {
@@ -42,12 +42,12 @@ func (this ClaimsAttr) Valid() bool {
 	return false
 }
 
-//获得生效时间
+// 获得生效时间
 func (this ClaimsAttr) GetAT() int64 {
 	return this.ClaimsAT
 }
 
-//获得失效时间
+// 获得失效时间
 func (this ClaimsAttr) GetExp() int64 {
 	return this.ClaimsExp
 }
