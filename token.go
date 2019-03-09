@@ -1,9 +1,9 @@
 package token
 
 type Token struct {
-	Claims Claims //要求的内容
-	sign   string //签名
-	str    string //token字符串
+	Claims Claims // 要求的内容
+	sign   string // 签名
+	str    string // token字符串
 }
 
 // 获得签名

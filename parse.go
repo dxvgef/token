@@ -18,7 +18,8 @@ func Parse(tokenStr string, claims Claims, key string) (*Token, error) {
 	// 判断数组长度及值是否为空
 	if len(arr) != 2 {
 		return nil, errors.New("token格式不正确")
-	} else if arr[0] == "" || arr[1] == "" {
+	}
+	if arr[0] == "" || arr[1] == "" {
 		return nil, errors.New("token格式不正确")
 	}
 

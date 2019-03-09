@@ -4,17 +4,17 @@ import "time"
 
 // claims的方法
 type Claims interface {
-	Activated() bool //检查是否激活
-	Expired() bool   //检查是否到期
-	Valid() bool     //检查所有时间决定token是否有效
-	GetAT() int64    //获得生效时间
-	GetExp() int64   //获得失效时间
+	Activated() bool // 检查是否激活
+	Expired() bool   // 检查是否到期
+	Valid() bool     // 检查所有时间决定token是否有效
+	GetAT() int64    // 获得生效时间
+	GetExp() int64   // 获得失效时间
 }
 
 // claims的属性
 type ClaimsAttr struct {
-	ClaimsAT  int64 `json:"claims_at,omitempty"`  //生效时间
-	ClaimsExp int64 `json:"claims_exp,omitempty"` //到期时间
+	ClaimsAT  int64 `json:"claims_at,omitempty"`  // 生效时间
+	ClaimsExp int64 `json:"claims_exp,omitempty"` // 到期时间
 }
 
 // 检查是否生效
