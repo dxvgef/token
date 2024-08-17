@@ -21,6 +21,12 @@ func Make(opts *Options) (*AccessToken, *RefreshToken, error) {
 		accessToken  AccessToken
 		refreshToken RefreshToken
 	)
+	if redisCli == nil {
+		return nil, nil, errors.New(redisCliErr)
+	}
+	if opts == nil {
+		return nil, nil, errors.New("invalid options")
+	}
 	if opts.AccessTokenPayload == "" {
 		opts.AccessTokenPayload = " "
 	}

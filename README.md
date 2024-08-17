@@ -15,6 +15,8 @@
 
 ## 方法
 
+- `NewRedisClient()` 创建新的Redis客户端实例（新建连接）
+- `UseRedisClient()` 使用传入的Redis客户端实例（复用连接）
 - `Make()` 生成新的`Token Pair`
 - `ParseAccessToken()` 将字符串解析成`AccessToken`
 - `ParseRefreshToken()` 将字符串解析成`RefreshToken`
@@ -25,3 +27,7 @@
 - `RefreshToken.AccessToken()` 获取`Refresh Token`签发的`Access Token`
 - `RefreshToken.ExpiresAt()` 获取`Refresh Token`的到期时间
 - `RefreshToken.Exchange()` 兑换新的`Token Pair`
+
+## 注意事项
+
+- `NewRedisClient()`和`UseRedisClient()`这两个方法的入参使用的是`github.com/redis/go-redis/v9`中的相关变量或参数，分别是：

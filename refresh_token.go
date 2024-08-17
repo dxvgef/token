@@ -16,33 +16,29 @@ type RefreshToken struct {
 }
 
 // ParseRefreshToken 解析RefreshToken
-func ParseRefreshToken(value string) (*RefreshToken, error) {
+// 第一个error是逻辑错误，第二个error是运行时错误
+func ParseRefreshToken(value string) (*RefreshToken, error, error) {
 	var (
 		err          error
 		refreshToken RefreshToken
-		ttl          time.Duration
 	)
+	if redisCli == nil {
+		return nil, nil, errors.New(redisCliErr)
+	}
 	if _, err = ulid.Parse(value); err != nil {
-		return nil, errors.New("invalid refresh token")
+		return nil, errors.New("invalid refresh token"), nil
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	refreshToken.accessToken, err = redisCli.Get(ctx, "refresh_token:"+value).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
-			return nil, errors.New("invalid refresh token")
+			return nil, errors.New("invalid refresh token"), nil
 		}
-		return nil, err
-	}
-	ttl, err = redisCli.TTL(ctx, "refresh_token:"+value).Result()
-	if err != nil {
-		return nil, err
-	}
-	if ttl < 1 {
-		return nil, errors.New("invalid refresh token")
+		return nil, nil, err
 	}
 	refreshToken.value = value
-	return &refreshToken, nil
+	return &refreshToken, nil, nil
 }
 
 // Value 获取刷新令牌的值
@@ -51,15 +47,27 @@ func (receiver *RefreshToken) Value() string {
 }
 
 // ExpiresAt 获取访问令牌的到期时间
+// 第一个参数返回-1表示已过期
 func (receiver *RefreshToken) ExpiresAt() (int64, error) {
+	if redisCli == nil {
+		return 0, errors.New(redisCliErr)
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	ttl, err := redisCli.TTL(ctx, "refresh_token:"+receiver.value).Result()
 	if err != nil {
 		return 0, err
 	}
+	if ttl == 0 {
+		// 如果存在没有ttl的key则视为异常，将其删除
+		err = redisCli.Del(ctx, "refresh_token:"+receiver.value).Err()
+		if err != nil {
+			return 0, err
+		}
+		return -1, nil
+	}
 	if ttl < 1 {
-		return 0, nil
+		return -1, nil
 	}
 	return time.Now().Add(ttl).Unix(), nil
 }
@@ -70,20 +78,24 @@ func (receiver *RefreshToken) AccessToken() string {
 }
 
 // Exchange 兑换新的令牌对，可保留旧的刷新令牌，且不会更新旧刷新令牌的TTL
-func (receiver *RefreshToken) Exchange(oldAccessToken string, opts *Options, makeNewRefreshToken bool) (*AccessToken, error) {
+// 第一个error是逻辑错误，第二个error是运行时错误
+func (receiver *RefreshToken) Exchange(oldAccessToken string, opts *Options, makeNewRefreshToken bool) (*AccessToken, error, error) {
 	var (
 		accessToken  AccessToken
 		redisBoolCmd *redis.BoolCmd
 		redisIntCmd  *redis.IntCmd
 	)
+	if redisCli == nil {
+		return nil, nil, errors.New(redisCliErr)
+	}
 	if oldAccessToken == "" || receiver.accessToken != oldAccessToken {
-		return nil, errors.New("invalid access token")
+		return nil, errors.New("invalid access token"), nil
 	}
 	if opts.AccessTokenTTL < 1 {
-		return nil, errors.New("invalid AccessTokenTTL value")
+		return nil, errors.New("invalid AccessTokenTTL value"), nil
 	}
 	if makeNewRefreshToken && opts.RefreshTokenTTL < 1 {
-		return nil, errors.New("invalid RefreshTokenTTL value")
+		return nil, errors.New("invalid RefreshTokenTTL value"), nil
 	}
 
 	// 生成新的访问令牌
@@ -101,16 +113,16 @@ func (receiver *RefreshToken) Exchange(oldAccessToken string, opts *Options, mak
 		opts.AccessTokenTTL,
 	)
 	if redisBoolCmd.Err() != nil {
-		return nil, redisBoolCmd.Err()
+		return nil, nil, redisBoolCmd.Err()
 	}
 	if !redisBoolCmd.Val() {
-		return nil, errors.New("failed to generate access token")
+		return nil, nil, errors.New("failed to generate access token")
 	}
 	receiver.accessToken = accessToken.value
 
 	// 删除旧的访问令牌，使旧的会话失效
 	if redisIntCmd = redisCli.Del(ctx, "access_token:"+oldAccessToken); redisIntCmd.Err() != nil {
-		return nil, redisIntCmd.Err()
+		return nil, nil, redisIntCmd.Err()
 	}
 
 	if !makeNewRefreshToken {
@@ -122,15 +134,15 @@ func (receiver *RefreshToken) Exchange(oldAccessToken string, opts *Options, mak
 			-1, // 不修改TTL
 		)
 		if redisBoolCmd.Err() != nil {
-			return nil, redisBoolCmd.Err()
+			return nil, nil, redisBoolCmd.Err()
 		}
 		if !redisBoolCmd.Val() {
-			return nil, errors.New("failed to update refresh token")
+			return nil, nil, errors.New("failed to update refresh token")
 		}
 	} else {
 		// 删除旧的刷新令牌
 		if redisIntCmd = redisCli.Del(ctx, "refresh_token:"+receiver.value); redisIntCmd.Err() != nil {
-			return nil, redisIntCmd.Err()
+			return nil, nil, redisIntCmd.Err()
 		}
 		receiver.value = ulid.Make().String()
 		redisBoolCmd = redisCli.SetNX(
@@ -140,11 +152,11 @@ func (receiver *RefreshToken) Exchange(oldAccessToken string, opts *Options, mak
 			opts.RefreshTokenTTL,
 		)
 		if redisBoolCmd.Err() != nil {
-			return nil, redisBoolCmd.Err()
+			return nil, nil, redisBoolCmd.Err()
 		}
 		if !redisBoolCmd.Val() {
-			return nil, errors.New("failed to generate refresh token")
+			return nil, nil, errors.New("failed to generate refresh token")
 		}
 	}
-	return &accessToken, nil
+	return &accessToken, nil, nil
 }
