@@ -9,9 +9,7 @@ import (
 
 func TestMake(t *testing.T) {
 	NewRedisClient(&redis.Options{
-		Addr:     "127.0.0.1:6379",
-		Username: "default",
-		Password: "123456",
+		Addr: "127.0.0.1:6379",
 	})
 	at, rt, err := Make(&Options{
 		AccessTokenTTL:     10 * time.Minute,
@@ -28,9 +26,7 @@ func TestMake(t *testing.T) {
 
 func TestParseAccessToken(t *testing.T) {
 	NewRedisClient(&redis.Options{
-		Addr:     "127.0.0.1:6379",
-		Username: "default",
-		Password: "123456",
+		Addr: "127.0.0.1:6379",
 	})
 	at, err := ParseAccessToken("01J5C2WEAA5T0EN5DJNMJ5Q6CM")
 	if err != nil {
@@ -42,9 +38,7 @@ func TestParseAccessToken(t *testing.T) {
 
 func TestAccessToken_ExpiresAt(t *testing.T) {
 	NewRedisClient(&redis.Options{
-		Addr:     "127.0.0.1:6379",
-		Username: "default",
-		Password: "123456",
+		Addr: "127.0.0.1:6379",
 	})
 	at, err := ParseAccessToken("01J5C5887MHASFDJYP9PQJYCBY")
 	if err != nil {
@@ -56,9 +50,7 @@ func TestAccessToken_ExpiresAt(t *testing.T) {
 
 func TestParseRefreshToken(t *testing.T) {
 	NewRedisClient(&redis.Options{
-		Addr:     "127.0.0.1:6379",
-		Username: "default",
-		Password: "123456",
+		Addr: "127.0.0.1:6379",
 	})
 	rt, err := ParseRefreshToken("01J5C2WEADR1PWY0G5B57G4CP2")
 	if err != nil {
@@ -70,9 +62,7 @@ func TestParseRefreshToken(t *testing.T) {
 
 func TestRefreshToken_ExpiresAt(t *testing.T) {
 	NewRedisClient(&redis.Options{
-		Addr:     "127.0.0.1:6379",
-		Username: "default",
-		Password: "123456",
+		Addr: "127.0.0.1:6379",
 	})
 	rt, err := ParseRefreshToken("01J5C5887QGA5ZQX5FJPN5S5WM")
 	if err != nil {
@@ -85,9 +75,7 @@ func TestRefreshToken_ExpiresAt(t *testing.T) {
 func TestRefreshToken_Refresh(t *testing.T) {
 	var at *AccessToken
 	NewRedisClient(&redis.Options{
-		Addr:     "127.0.0.1:6379",
-		Username: "default",
-		Password: "123456",
+		Addr: "127.0.0.1:6379",
 	})
 	rt, err := ParseRefreshToken("01J5C5887QGA5ZQX5FJPN5S5WM")
 	if err != nil {
