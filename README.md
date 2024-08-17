@@ -30,4 +30,4 @@
 
 ## 注意事项
 
-- `NewRedisClient()`和`UseRedisClient()`这两个方法的入参使用的是`github.com/redis/go-redis/v9`中的相关变量或参数，分别是：
+- `NewRedisClient()`和`UseRedisClient()`这两个方法的入参使用的是`github.com/redis/go-redis/v9`中的相关变量或参数
