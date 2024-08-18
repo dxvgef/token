@@ -15,6 +15,14 @@ func TestUseRedisClient(t *testing.T) {
 	UseRedisClient(nil)
 }
 
+func TestSetAccessTokenPrefix(t *testing.T) {
+	SetAccessTokenPrefix("access_token:")
+}
+
+func TestSetRefreshTokenPrefix(t *testing.T) {
+	SetRefreshTokenPrefix("refresh_token:")
+}
+
 func TestMake(t *testing.T) {
 	NewRedisClient(&redis.Options{
 		Addr: "127.0.0.1:6379",

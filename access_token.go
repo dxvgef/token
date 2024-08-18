@@ -13,6 +13,7 @@ import (
 type AccessToken struct {
 	value   string // 访问令牌的值
 	payload string // 荷载内容
+	prefix  string // 键名前缀
 }
 
 // ParseAccessToken 解析AccessToken
@@ -31,14 +32,14 @@ func ParseAccessToken(value string) (*AccessToken, error, error) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	accessToken.payload, err = redisCli.Get(ctx, "access_token:"+value).Result()
+	accessToken.payload, err = redisCli.Get(ctx, accessTokenPrefix+value).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			return nil, errors.New("invalid access token"), nil
 		}
 		return nil, nil, err
 	}
-	ttl, err = redisCli.TTL(ctx, "access_token:"+value).Result()
+	ttl, err = redisCli.TTL(ctx, accessTokenPrefix+value).Result()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -67,7 +68,7 @@ func (receiver *AccessToken) ExpiresAt() (int64, error) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	ttl, err := redisCli.TTL(ctx, "access_token:"+receiver.value).Result()
+	ttl, err := redisCli.TTL(ctx, accessTokenPrefix+receiver.value).Result()
 	if err != nil {
 		return 0, err
 	}

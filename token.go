@@ -39,7 +39,7 @@ func Make(opts *Options) (*AccessToken, *RefreshToken, error) {
 	defer cancel()
 	result := redisCli.SetNX(
 		ctx,
-		"access_token:"+accessToken.value,
+		accessTokenPrefix+accessToken.value,
 		accessToken.payload,
 		opts.AccessTokenTTL,
 	)
@@ -55,7 +55,7 @@ func Make(opts *Options) (*AccessToken, *RefreshToken, error) {
 		refreshToken.accessToken = accessToken.value
 		result = redisCli.SetNX(
 			ctx,
-			"refresh_token:"+refreshToken.value,
+			refreshTokenPrefix+refreshToken.value,
 			accessToken.value,
 			opts.RefreshTokenTTL,
 		)
