@@ -83,7 +83,7 @@ func (receiver *AccessToken) Get(field string) (string, error) {
 }
 
 // Set 修改访问令牌的 payload 中的某个字段值
-func (receiver *AccessToken) Set(field string, value interface{}) error {
+func (receiver *AccessToken) Set(field string, value any) error {
 	key := receiver.token.options.AccessTokenPrefix + receiver.value
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
