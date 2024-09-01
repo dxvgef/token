@@ -1,6 +1,6 @@
 # dxvgef/token
 
-用于`Go`语言的访问令牌开发包，可用于 session 或 access token 两种模式的应用场景 
+`Go`语言的访问令牌开发包，可用于 session 或 access token 两种模式的应用场景 
 
 使用`ULID`算法生成令牌字符串，和`Redis`协议兼容的服务端存储令牌数据
 
