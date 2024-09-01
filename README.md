@@ -15,7 +15,7 @@ access token 支持 HASH 类型的荷载内容
 - 销毁已过期的，并生成新的 access token
 - 刷新已过期的 access token
 
-## token 模式
+### token 模式
 
 此场景需要先生成 refresh token，然后使用它的`Exchange()`方法来兑换一个新的 access token
  
