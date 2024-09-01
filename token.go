@@ -144,6 +144,9 @@ func (receiver *Token) ParseAccessToken(value string) (*AccessToken, error) {
 			if accessToken.createdAt, err = strconv.ParseInt(str, 10, 64); err != nil {
 				return nil, err
 			}
+			if accessToken.createdAt < 1 {
+				return nil, ErrInvalidAccessToken
+			}
 		} else {
 			return nil, ErrInvalidAccessToken
 		}
@@ -152,6 +155,9 @@ func (receiver *Token) ParseAccessToken(value string) (*AccessToken, error) {
 		if str, ok := payloadResult.Val()[1].(string); ok {
 			if accessToken.expiresAt, err = strconv.ParseInt(str, 10, 64); err != nil {
 				return nil, err
+			}
+			if accessToken.expiresAt < 1 {
+				return nil, ErrInvalidAccessToken
 			}
 		} else {
 			return nil, ErrInvalidAccessToken
