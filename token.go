@@ -285,6 +285,11 @@ func (receiver *Token) ParseRefreshToken(value string) (*RefreshToken, error) {
 			if refreshToken.usedAt, err = strconv.ParseInt(payload[k], 10, 64); err != nil {
 				return nil, ErrInvalidRefreshToken
 			}
+		default:
+			if refreshToken.payload == nil {
+				refreshToken.payload = make(map[string]any)
+			}
+			refreshToken.payload[k] = payload[k]
 		}
 	}
 	return refreshToken, nil

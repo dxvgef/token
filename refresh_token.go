@@ -3,6 +3,7 @@ package token
 import (
 	"context"
 	"errors"
+	"log"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -77,8 +78,9 @@ func (receiver *RefreshToken) Exchange() (*AccessToken, error) {
 			return errors.New("new access token already exists")
 		}
 		// 写入 payload
+		log.Println(len(receiver.payload))
 		for k := range receiver.payload {
-			if k != "_created_at" && k != "_expires_at" && k != "_refreshed_at" && k != "_refresh_count" {
+			if k != "_access_token" && k != "_created_at" && k != "_expires_at" && k != "_used_count" && k != "_used_at" {
 				if intResult = pipe.HSet(ctx, key, k, receiver.payload[k]); intResult.Err() != nil {
 					return intResult.Err()
 				}
@@ -105,10 +107,8 @@ func (receiver *RefreshToken) Exchange() (*AccessToken, error) {
 
 		// 更新当前刷新令牌的属性
 		key = receiver.token.options.RefreshTokenPrefix + receiver.value
-		if receiver.accessToken != "" {
-			if intResult = pipe.HSet(ctx, key, "_access_token", accessToken.value); intResult.Err() != nil {
-				return intResult.Err()
-			}
+		if intResult = pipe.HSet(ctx, key, "_access_token", accessToken.value); intResult.Err() != nil {
+			return intResult.Err()
 		}
 		// 更新 refresh token 的 used_at
 		if intResult = pipe.HSet(ctx, key, "_used_count", useCount+1); intResult.Err() != nil {
