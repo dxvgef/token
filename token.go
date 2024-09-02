@@ -184,12 +184,13 @@ func (receiver *Token) ParseAccessToken(value string) (*AccessToken, error) {
 	return accessToken, nil
 }
 
-// MakeRefreshToken 创建一个新的刷新令牌
-func (receiver *Token) MakeRefreshToken() (*RefreshToken, error) {
+// MakeRefreshToken 创建一个新的刷新令牌，需传入兑换 access token 时的 payload
+func (receiver *Token) MakeRefreshToken(payload map[string]any) (*RefreshToken, error) {
 	refreshToken := &RefreshToken{
 		token:     receiver,
 		value:     ulid.Make().String(),
 		createdAt: time.Now().Unix(),
+		payload:   payload,
 	}
 	refreshToken.expiresAt = refreshToken.createdAt + receiver.options.RefreshTokenTTL
 
@@ -207,6 +208,11 @@ func (receiver *Token) MakeRefreshToken() (*RefreshToken, error) {
 	}
 
 	_, err := receiver.redisClient.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+		for k := range payload {
+			if intResult = pipe.HSet(ctx, key, k, payload[k]); intResult.Err() != nil {
+				return intResult.Err()
+			}
+		}
 		if intResult = pipe.HSet(ctx, key, "_created_at", refreshToken.createdAt); intResult.Err() != nil {
 			return intResult.Err()
 		}

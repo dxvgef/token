@@ -12,12 +12,13 @@ import (
 // RefreshToken 刷新令牌
 type RefreshToken struct {
 	token       *Token
-	value       string // 刷新令牌的值
-	accessToken string // 绑定的访问令牌
-	createdAt   int64  // 访问令牌的创建时间
-	expiresAt   int64  // 访问令牌的到期时间
-	usedCount   int    // 已使用次数
-	usedAt      int64  // 上次使用时间
+	value       string         // 刷新令牌的值
+	accessToken string         // 绑定的访问令牌
+	payload     map[string]any // 绑定的访问令牌的荷载内容
+	createdAt   int64          // 访问令牌的创建时间
+	expiresAt   int64          // 访问令牌的到期时间
+	usedCount   int            // 已使用次数
+	usedAt      int64          // 上次使用时间
 }
 
 // Value 获取刷新令牌的值
@@ -27,7 +28,7 @@ func (receiver *RefreshToken) Value() string {
 
 // Exchange 兑换新的访问令牌，保留当前刷新令牌，且不会更新它的TTL
 // 如非必要，不建议用此方法兑换新的访问令牌，而是使用 Destroy() 方法销毁此刷新令牌，并为客户端提供一对新令牌
-func (receiver *RefreshToken) Exchange(payload map[string]any) (*AccessToken, error) {
+func (receiver *RefreshToken) Exchange() (*AccessToken, error) {
 	now := time.Now().Unix()
 
 	// 检查刷新令牌是否有效
@@ -76,9 +77,11 @@ func (receiver *RefreshToken) Exchange(payload map[string]any) (*AccessToken, er
 			return errors.New("new access token already exists")
 		}
 		// 写入 payload
-		for k := range payload {
-			if intResult = pipe.HSet(ctx, key, k, payload[k]); intResult.Err() != nil {
-				return intResult.Err()
+		for k := range receiver.payload {
+			if k != "_created_at" && k != "_expires_at" && k != "_refreshed_at" && k != "_refresh_count" {
+				if intResult = pipe.HSet(ctx, key, k, receiver.payload[k]); intResult.Err() != nil {
+					return intResult.Err()
+				}
 			}
 		}
 		if intResult = pipe.HSet(ctx, key, "_created_at", accessToken.createdAt); intResult.Err() != nil {

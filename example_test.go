@@ -90,7 +90,10 @@ func TestCookieSessionMode(t *testing.T) {
 
 func TestTokenMode(t *testing.T) {
 	t.Log("---------- make refresh token --------------")
-	refreshToken, err := testInst.MakeRefreshToken()
+	payload := make(map[string]any)
+	payload["field1"] = "value1"
+	payload["field2"] = "value2"
+	refreshToken, err := testInst.MakeRefreshToken(payload)
 	if err != nil {
 		t.Error(err)
 		return
@@ -102,10 +105,7 @@ func TestTokenMode(t *testing.T) {
 	t.Log("refresh token used_at: ", refreshToken.UsedAt())
 
 	t.Log("---------- exchange access token --------------")
-	payload := make(map[string]any)
-	payload["field1"] = "value1"
-	payload["field2"] = "value2"
-	accessToken, err2 := refreshToken.Exchange(payload)
+	accessToken, err2 := refreshToken.Exchange()
 	if err2 != nil {
 		t.Error(err2)
 		return
@@ -115,6 +115,14 @@ func TestTokenMode(t *testing.T) {
 	t.Log("access token expires_at: ", accessToken.ExpiresAt())
 	t.Log("access token refreshed_at: ", accessToken.RefreshedAt())
 	t.Log("access token refresh_count: ", accessToken.RefreshCount())
+	getPayload, err := accessToken.GetAll()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	for k := range getPayload {
+		t.Log("    ", k, getPayload[k])
+	}
 	t.Log("refresh token access token: ", refreshToken.AccessToken())
 
 	t.Log("---------- destroy refresh token --------------")
