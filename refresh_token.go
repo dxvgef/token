@@ -176,3 +176,8 @@ func (receiver *RefreshToken) UsedCount() int {
 func (receiver *RefreshToken) UsedAt() int64 {
 	return receiver.usedAt
 }
+
+// Payload 获取令牌的荷载内容
+func (receiver *RefreshToken) Payload() map[string]any {
+	return receiver.payload
+}

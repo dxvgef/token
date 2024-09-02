@@ -103,6 +103,7 @@ func TestTokenMode(t *testing.T) {
 	t.Log("refresh token expires_at: ", refreshToken.ExpiresAt())
 	t.Log("refresh token used_count: ", refreshToken.UsedCount())
 	t.Log("refresh token used_at: ", refreshToken.UsedAt())
+	t.Log("refresh token payload: ", refreshToken.Payload())
 
 	t.Log("---------- exchange access token --------------")
 	accessToken, err2 := refreshToken.Exchange()
