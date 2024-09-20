@@ -3,7 +3,6 @@ package token
 import (
 	"context"
 	"errors"
-	"log"
 	"time"
 
 	"github.com/oklog/ulid/v2"
@@ -78,7 +77,6 @@ func (receiver *RefreshToken) Exchange() (*AccessToken, error) {
 			return errors.New("new access token already exists")
 		}
 		// 写入 payload
-		log.Println(len(receiver.payload))
 		for k := range receiver.payload {
 			if k != "_access_token" && k != "_created_at" && k != "_expires_at" && k != "_used_count" && k != "_used_at" {
 				if intResult = pipe.HSet(ctx, key, k, receiver.payload[k]); intResult.Err() != nil {
