@@ -35,9 +35,9 @@ func (receiver *RefreshToken) Exchange() (*AccessToken, error) {
 		return nil, ErrInvalidRefreshToken
 	}
 
-	tokenStr, err := receiver.token.options.MakeTokenFunc()
-	if err != nil {
-		return nil, err
+	tokenStr := receiver.token.options.MakeTokenFunc()
+	if tokenStr == "" {
+		return nil, ErrMakeToken
 	}
 
 	// 生成新的 access token 的属性
