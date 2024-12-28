@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/oklog/ulid/v2"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -23,11 +22,13 @@ type Token struct {
 
 // Options 创建 token 的配置
 type Options struct {
-	AccessTokenTTL     int64  // access token 的TTL（秒）
-	AccessTokenPrefix  string // access token 的键名前缀
-	RefreshTokenTTL    int64  // refresh token 的TTL（秒），必须大于 AccessTokenTTL
-	RefreshTokenPrefix string // refresh token 的键名前缀
-	Timeout            int    // 每次操作 redis 的超时时间（秒）
+	AccessTokenTTL     int64                  // access token 的TTL（秒）
+	AccessTokenPrefix  string                 // access token 的键名前缀
+	RefreshTokenTTL    int64                  // refresh token 的TTL（秒），必须大于 AccessTokenTTL
+	RefreshTokenPrefix string                 // refresh token 的键名前缀
+	Timeout            int                    // 每次操作 redis 的超时时间（秒）
+	MakeTokenFunc      func() (string, error) // 生成 Token 的函数
+	CheckTokenFunc     func(string) bool      // 检查 Token 格式是否正确
 }
 
 // New 新建实例
@@ -44,11 +45,13 @@ func New(redisClient *redis.Client, opts *Options) (token *Token, err error) {
 			Timeout:            10,
 		}
 	} else if opts.Timeout < 1 {
-		return nil, errors.New("Timeout value must be > 1")
+		return nil, errors.New("timeout value must be > 1")
 	} else if opts.AccessTokenTTL < 1 {
 		return nil, errors.New("AccessTokenTTL value must be > 1")
 	} else if opts.RefreshTokenTTL <= opts.AccessTokenTTL {
 		return nil, errors.New("RefreshTokenTTL value must be > AccessTokenTTL")
+	} else if opts.MakeTokenFunc == nil {
+		return nil, errors.New("MakeTokenFunc undefined")
 	}
 	token = &Token{
 		redisClient: redisClient,
@@ -60,10 +63,14 @@ func New(redisClient *redis.Client, opts *Options) (token *Token, err error) {
 // MakeAccessToken 创建一个新的访问令牌
 func (receiver *Token) MakeAccessToken(payload map[string]any) (*AccessToken, error) {
 	now := time.Now().Unix()
+	tokenStr, err := receiver.options.MakeTokenFunc()
+	if err != nil {
+		return nil, err
+	}
 	// 生成 access token
 	accessToken := &AccessToken{
 		token:     receiver,
-		value:     ulid.Make().String(),
+		value:     tokenStr,
 		createdAt: now,
 		expiresAt: now + receiver.options.AccessTokenTTL,
 	}
@@ -73,7 +80,7 @@ func (receiver *Token) MakeAccessToken(payload map[string]any) (*AccessToken, er
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(receiver.options.Timeout)*time.Second)
 	defer cancel()
 
-	_, err := receiver.redisClient.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+	_, err = receiver.redisClient.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
 		// 判断 access token 是否重复
 		intResult := pipe.Exists(ctx, key)
 		if intResult.Err() != nil {
@@ -120,8 +127,10 @@ func (receiver *Token) MakeAccessToken(payload map[string]any) (*AccessToken, er
 func (receiver *Token) ParseAccessToken(value string) (*AccessToken, error) {
 	var err error
 
-	if _, err = ulid.Parse(value); err != nil {
-		return nil, ErrInvalidAccessToken
+	if receiver.options.CheckTokenFunc != nil {
+		if !receiver.options.CheckTokenFunc(value) {
+			return nil, ErrInvalidAccessToken
+		}
 	}
 
 	accessToken := &AccessToken{
@@ -186,9 +195,13 @@ func (receiver *Token) ParseAccessToken(value string) (*AccessToken, error) {
 
 // MakeRefreshToken 创建一个新的刷新令牌，需传入兑换 access token 时的 payload
 func (receiver *Token) MakeRefreshToken(payload map[string]any) (*RefreshToken, error) {
+	tokenStr, err := receiver.options.MakeTokenFunc()
+	if err != nil {
+		return nil, err
+	}
 	refreshToken := &RefreshToken{
 		token:     receiver,
-		value:     ulid.Make().String(),
+		value:     tokenStr,
 		createdAt: time.Now().Unix(),
 		payload:   payload,
 	}
@@ -207,7 +220,7 @@ func (receiver *Token) MakeRefreshToken(payload map[string]any) (*RefreshToken, 
 		return nil, errors.New("new refresh token already exists")
 	}
 
-	_, err := receiver.redisClient.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+	_, err = receiver.redisClient.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
 		for k := range payload {
 			if intResult = pipe.HSet(ctx, key, k, payload[k]); intResult.Err() != nil {
 				return intResult.Err()
@@ -246,8 +259,10 @@ func (receiver *Token) ParseRefreshToken(value string) (*RefreshToken, error) {
 		err     error
 		payload map[string]string
 	)
-	if _, err = ulid.Parse(value); err != nil {
-		return nil, ErrInvalidRefreshToken
+	if receiver.options.CheckTokenFunc != nil {
+		if !receiver.options.CheckTokenFunc(value) {
+			return nil, ErrInvalidRefreshToken
+		}
 	}
 
 	refreshToken := &RefreshToken{

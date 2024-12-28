@@ -5,7 +5,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/oklog/ulid/v2"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -36,10 +35,15 @@ func (receiver *RefreshToken) Exchange() (*AccessToken, error) {
 		return nil, ErrInvalidRefreshToken
 	}
 
+	tokenStr, err := receiver.token.options.MakeTokenFunc()
+	if err != nil {
+		return nil, err
+	}
+
 	// 生成新的 access token 的属性
 	accessToken := &AccessToken{
 		token:     receiver.token,
-		value:     ulid.Make().String(),
+		value:     tokenStr,
 		createdAt: now,
 	}
 	accessToken.expiresAt = accessToken.createdAt + receiver.token.options.AccessTokenTTL

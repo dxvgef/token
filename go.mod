@@ -2,10 +2,7 @@ module github.com/dxvgef/token
 
 go 1.18
 
-require (
-	github.com/oklog/ulid/v2 v2.1.0
-	github.com/redis/go-redis/v9 v9.6.1
-)
+require github.com/redis/go-redis/v9 v9.7.0
 
 require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
