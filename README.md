@@ -2,7 +2,7 @@
 
 `Go`语言的访问令牌开发包，可用于 session 或 access token 两种模式的应用场景 
 
-使用`ULID`算法生成令牌字符串，和`Redis`协议兼容的服务端存储令牌数据
+使用可自定义的算法生成令牌字符串，和`Redis`协议兼容的服务端存储令牌数据
 
 access token 支持 HASH 类型的荷载内容
 
@@ -32,10 +32,12 @@ access token 支持 HASH 类型的荷载内容
 ### Token.
 
 - `New()` 创建 token 实例，使用了`github.com/redis/go-redis`的`*Client`类型
-- `MakeAccessToken()` 生成 access token
+- `Options.MakeTokenFunc()` 生成 token 字符串的函数
+- `Options.CheckTokenFunc()` 校验 token 字符串格式的函数
+- `MakeAccessToken()` 生成 access token（调用`MakeTokenFunc`）
 - `ParseAccessToken()` 将字符串解析成 access token
 - `DestroyAccessToken()` 销毁指定的 access token
-- `MakeRefreshToken()` 生成 refresh token
+- `MakeRefreshToken()` 生成 refresh token（调用`MakeTokenFunc`）
 - `ParseRefreshToken()` 将字符串解析成 refresh token
 - `DestroyRefreshToken()` 销毁指定的 refresh token，并自动销毁其生成的 access token
 
