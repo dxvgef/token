@@ -88,6 +88,34 @@ func TestMakeAndGet(t *testing.T) {
 	t.Log("field2: ", v2)
 }
 
+func TestParse(t *testing.T) {
+	t.Log("---------- make token --------------")
+	testToken, err := testInst.MakeToken(nil, nil)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	time.Sleep(3 * time.Second)
+	t.Log("---------- parse token --------------")
+	var newToken *Token
+	newToken, err = testInst.ParseToken(testToken.value)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	var allPayload map[string]string
+	t.Log(newToken.value)
+	allPayload, err = newToken.GetAll(true)
+	for k := range allPayload {
+		t.Log("    ", k, allPayload[k])
+	}
+	t.Log("---------- destroy token --------------")
+	if err = testToken.Destroy(false); err != nil {
+		t.Error(err)
+		return
+	}
+}
+
 func TestMakeAndRefresh(t *testing.T) {
 	payload := make(map[string]any)
 	payload["field1"] = "value1"
