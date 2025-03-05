@@ -3,28 +3,32 @@ package token
 import (
 	"log"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 )
 
-var testInst *Token
+var testInst *Manager
 
 func TestMain(m *testing.M) {
 	log.SetFlags(log.Ltime | log.Lshortfile)
 	var err error
-	testInst, err = New(
+	testInst, err = NewManager(
 		redis.NewClient(&redis.Options{
 			Username: "default",
 			Password: "123456",
 		}),
-		&Options{
-			AccessTokenTTL:     600,
-			AccessTokenPrefix:  "access_token:",
-			RefreshTokenTTL:    1200,
-			RefreshTokenPrefix: "refresh_token:",
-			Timeout:            10,
+		&ManagerOptions{
+			KeyPrefix: "sess:",
+			Timeout:   10,
+			MakeTokenFunc: func() string {
+				return strconv.FormatInt(time.Now().UnixNano(), 10)
+			},
+			CheckTokenFunc: func(s string) bool {
+				return true
+			},
 		},
 	)
 	if err != nil {
@@ -34,116 +38,160 @@ func TestMain(m *testing.M) {
 	os.Exit(0)
 }
 
-func TestCookieSessionMode(t *testing.T) {
+func TestMakeAndGet(t *testing.T) {
 	payload := make(map[string]any)
 	payload["field1"] = "value1"
 	payload["field2"] = "value2"
 
-	t.Log("---------- make access token --------------")
-	accessToken, err := testInst.MakeAccessToken(payload)
+	t.Log("---------- make token --------------")
+	testToken, err := testInst.MakeToken(&MetaData{
+		TTL:          60,
+		RefreshLimit: 5,
+		IP:           "127.0.0.1",
+		Fingerprint:  "test",
+	}, payload)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	t.Log("value: ", accessToken.Value())
-	t.Log("created_at: ", accessToken.CreatedAt())
-	t.Log("expires_at: ", accessToken.ExpiresAt())
-	t.Log("refreshed_at: ", accessToken.RefreshedAt())
-	t.Log("refresh_count: ", accessToken.RefreshCount())
+	t.Log("---------- meta  --------------")
+	t.Log("value: ", testToken.Value())
+	t.Log("ttl: ", testToken.TTL())
+	t.Log("created_at: ", testToken.CreatedAt())
+	t.Log("expires_at: ", testToken.ExpiresAt())
+	t.Log("refreshed_at: ", testToken.RefreshedAt())
+	t.Log("refresh_limit: ", testToken.RefreshLimit())
+	t.Log("refreshed_count: ", testToken.RefreshedCount())
+	t.Log("ip: ", testToken.IP())
+	t.Log("fingerprint: ", testToken.Fingerprint())
+	t.Log("child_token: ", testToken.ChildToken())
+	time.Sleep(time.Second * 3)
+	t.Log("---------- GetAll  --------------")
 	var allPayload map[string]string
-	allPayload, err = accessToken.GetAll()
-	t.Log("payload", allPayload)
-
-	t.Log("---------- waiting 3 second refresh access token --------------")
-	time.Sleep(3 * time.Second)
-	err = accessToken.Refresh()
+	allPayload, err = testToken.GetAll(false)
+	for k := range allPayload {
+		t.Log("    ", k, allPayload[k])
+	}
+	t.Log("---------- Get  --------------")
+	var v1, v2 string
+	v1, err = testToken.Get("field1")
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	t.Log("refresh_count: ", accessToken.RefreshCount())
-	t.Log("refreshed_at: ", accessToken.RefreshedAt())
-	t.Log("expires_at: ", accessToken.ExpiresAt())
-	t.Log("payload:")
-	getPayload, err := accessToken.GetAll()
+	v2, err = testToken.Get("field2")
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	for k := range getPayload {
-		t.Log("    ", k, getPayload[k])
-	}
-
-	t.Log("---------- destroy access token --------------")
-	err = accessToken.Destroy()
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	_, err = testInst.ParseAccessToken(accessToken.Value())
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	t.Log("access token destroyed")
+	t.Log("field1: ", v1)
+	t.Log("field2: ", v2)
 }
 
-func TestTokenMode(t *testing.T) {
-	t.Log("---------- make refresh token --------------")
+func TestMakeAndRefresh(t *testing.T) {
 	payload := make(map[string]any)
 	payload["field1"] = "value1"
 	payload["field2"] = "value2"
-	refreshToken, err := testInst.MakeRefreshToken(payload)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	t.Log("refresh token value: ", refreshToken.Value())
-	t.Log("refresh token created_at: ", refreshToken.CreatedAt())
-	t.Log("refresh token expires_at: ", refreshToken.ExpiresAt())
-	t.Log("refresh token used_count: ", refreshToken.UsedCount())
-	t.Log("refresh token used_at: ", refreshToken.UsedAt())
-	t.Log("refresh token payload: ", refreshToken.Payload())
 
-	t.Log("---------- exchange access token --------------")
-	accessToken, err2 := refreshToken.Exchange()
-	if err2 != nil {
-		t.Error(err2)
-		return
-	}
-	t.Log("access token value: ", accessToken.Value())
-	t.Log("access token created_at: ", accessToken.CreatedAt())
-	t.Log("access token expires_at: ", accessToken.ExpiresAt())
-	t.Log("access token refreshed_at: ", accessToken.RefreshedAt())
-	t.Log("access token refresh_count: ", accessToken.RefreshCount())
-	getPayload, err := accessToken.GetAll()
+	t.Log("---------- make token --------------")
+	testToken, err := testInst.MakeToken(&MetaData{
+		TTL:          60,
+		RefreshLimit: -1,
+		IP:           "127.0.0.1",
+		Fingerprint:  "test",
+	}, payload)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	for k := range getPayload {
-		t.Log("    ", k, getPayload[k])
+	var allPayload map[string]string
+	allPayload, err = testToken.GetAll(true)
+	for k := range allPayload {
+		t.Log("    ", k, allPayload[k])
 	}
-	t.Log("refresh token access token: ", refreshToken.AccessToken())
+	for i := 0; i < 4; i++ {
+		time.Sleep(time.Second * 5)
+		t.Log("---------- refresh  --------------")
+		if err = testToken.Refresh(); err != nil {
+			t.Error(err)
+			return
+		}
+		allPayload, err = testToken.GetAll(true)
+		for k := range allPayload {
+			t.Log("    ", k, allPayload[k])
+		}
+	}
+}
 
-	t.Log("---------- destroy refresh token --------------")
-	err = refreshToken.Destroy()
-	if err != nil {
-		t.Error(err)
-		return
-	}
+func TestMakeChild(t *testing.T) {
+	payload := make(map[string]any)
+	payload["field1"] = "value1"
+	payload["field2"] = "value2"
 
-	t.Log("---------- parse token --------------")
-	_, err = testInst.ParseAccessToken(accessToken.Value())
+	t.Log("---------- make token --------------")
+	testToken, err := testInst.MakeToken(&MetaData{
+		TTL:          60,
+		RefreshLimit: 3,
+		IP:           "127.0.0.1",
+		Fingerprint:  "test",
+	}, payload)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	t.Log("access token destroyed")
-	_, err = testInst.ParseRefreshToken(refreshToken.Value())
+	var allPayload map[string]string
+	allPayload, err = testToken.GetAll(true)
+	for k := range allPayload {
+		t.Log("    ", k, allPayload[k])
+	}
+	time.Sleep(5 * time.Second)
+	t.Log("---------- make chiled token --------------")
+	newToken, err := testToken.MakeChildToken(&MetaData{
+		TTL:          30,
+		RefreshLimit: -1,
+		IP:           "127.0.0.1",
+		Fingerprint:  "test",
+	}, payload)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	t.Log("refresh token destroyed")
+	allPayload, err = newToken.GetAll(true)
+	for k := range allPayload {
+		t.Log("    ", k, allPayload[k])
+	}
+}
+
+func TestDestroy(t *testing.T) {
+	t.Log("---------- make token --------------")
+	testToken, err := testInst.MakeToken(nil, nil)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	time.Sleep(3 * time.Second)
+	t.Log("---------- make child token --------------")
+	var newToken *Token
+	newToken, err = testToken.MakeChildToken(nil, nil)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	var allPayload map[string]string
+	t.Log(testToken.value)
+	allPayload, err = testToken.GetAll(true)
+	for k := range allPayload {
+		t.Log("    ", k, allPayload[k])
+	}
+	t.Log(newToken.value)
+	allPayload, err = newToken.GetAll(true)
+	for k := range allPayload {
+		t.Log("    ", k, allPayload[k])
+	}
+	time.Sleep(3 * time.Second)
+	t.Log("---------- destroy parent token --------------")
+	if err = testToken.Destroy(false); err != nil {
+		t.Error(err)
+		return
+	}
 }
